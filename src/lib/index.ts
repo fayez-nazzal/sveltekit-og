@@ -5,19 +5,23 @@ import { svg2png, initialize, type ConvertOptions } from 'svg2png-wasm';
 
 let initialized = false;
 
-const fontFile = await fetch('https://sveltekit-og.ethercorps.io/noto-sans.ttf');
-const fontData: ArrayBuffer = await fontFile.arrayBuffer();
-
-const indexWasmRes = await fetch('https://unpkg.com/svg2png-wasm/svg2png_wasm_bg.wasm');
-const svg2PngWasmBuffer = await indexWasmRes.arrayBuffer();
+let defaultFontData: ArrayBuffer;
 
 const initSvgToPng = async () => {
+	const indexWasmRes = await fetch('https://unpkg.com/svg2png-wasm/svg2png_wasm_bg.wasm');
+	const svg2PngWasmBuffer = await indexWasmRes.arrayBuffer();
 	await initialize(svg2PngWasmBuffer).catch((e) => console.log(e));
 	initialized = true;
 };
 
 const ImageResponse = async (htmlTemplate: string, optionsByUser: ImageResponseOptions) => {
 	const options = Object.assign({ width: 1200, height: 630, debug: !1 }, optionsByUser);
+	
+	if (!defaultFontData && !options.fonts) { 
+		const fontFile = await fetch('https://sveltekit-og.ethercorps.io/noto-sans.ttf');
+		defaultFontData = await fontFile.arrayBuffer();
+	} 
+	
 	const svg = await satori(toReactElement(htmlTemplate), {
 		width: options.width,
 		height: options.height,
@@ -25,7 +29,7 @@ const ImageResponse = async (htmlTemplate: string, optionsByUser: ImageResponseO
 		fonts: options.fonts || [
 			{
 				name: 'sans serif',
-				data: fontData,
+				data: defaultFontData,
 				style: 'normal',
 				weight: 700
 			}
